@@ -4,7 +4,7 @@ import (
   "context"
   "flag"
   "fmt"
-  "nasefa/helpers"
+  "path"
   "github.com/google/subcommands"
 )
 
@@ -32,17 +32,26 @@ func (p *receiveCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interf
     return subcommands.ExitUsageError
   }
 
+  objStore, err := getObjStore(p.bucketName)
+  if err != nil {
+    fmt.Printf("❌ %s\n", err)
+    return subcommands.ExitFailure
+  }
+
   destinationDirectory := f.Args()[0]
   fileIds := f.Args()[1:]
 
   for i, fileId := range fileIds {
     fmt.Printf("📥 Receiving file %d/%d: %s\n", i+1, numFiles, fileId)
-    err := helpers.DownloadFiles(fileId, destinationDirectory)
+
+    destinationFile := path.Join(destinationDirectory, path.Base(fileId))
+    err = objStore.GetFile(fileId, destinationFile)
     if err != nil {
       fmt.Printf("❌ Receive failed: %s\n", err)
       return subcommands.ExitFailure
     }
   }
 
+  fmt.Printf("✅ Done\n")
   return subcommands.ExitSuccess
 }

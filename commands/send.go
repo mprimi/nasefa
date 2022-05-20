@@ -4,7 +4,6 @@ import (
   "context"
   "flag"
   "fmt"
-  "nasefa/helpers"
   "github.com/google/subcommands"
 )
 
@@ -32,14 +31,22 @@ func (p *sendCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
     return subcommands.ExitUsageError
   }
 
+  objStore, err := getObjStore(p.bucketName)
+  if err != nil {
+    fmt.Printf("❌ %s\n", err)
+    return subcommands.ExitFailure
+  }
+
   for i, filePath := range f.Args() {
     fmt.Printf("📤 Sending file %d/%d: %s\n", i+1, numFiles, filePath)
-    err := helpers.UploadFile(filePath)
+
+    _, err := objStore.PutFile(filePath)
     if err != nil {
-      fmt.Printf("❌ File upload failed: %s\n", err)
+      fmt.Printf("❌ Send error: %s\n", err)
       return subcommands.ExitFailure
     }
   }
 
+  fmt.Printf("✅ Done\n")
   return subcommands.ExitSuccess
 }
