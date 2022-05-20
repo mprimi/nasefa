@@ -66,7 +66,7 @@ func UploadFile(sourceFilePath string) (error) {
 }
 
 func DownloadFiles(fileId, destinationDirectory string) (error) {
-  log.Printf("⏳ Downloading files to %s", destinationDirectory)
+  log.Printf("⏳ Downloading file '%s' to '%s'", fileId, destinationDirectory)
 
   objStore, err := getObjStore()
   if err != nil {
