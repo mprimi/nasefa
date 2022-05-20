@@ -1,2 +1,2 @@
 # nasefa
-Send and receive files using NATS
+## Send and receive files using NATS
