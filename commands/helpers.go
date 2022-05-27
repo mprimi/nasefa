@@ -38,3 +38,18 @@ func getObjStore(bucket string) (nats.ObjectStore, error)  {
 
   return objStore, nil
 }
+
+func logDebug(format string, a ...interface{}) (int, error)  {
+  return fmt.Printf(" 🐛 " + format + "\n", a...)
+}
+
+func getFilename(objInfo *nats.ObjectInfo) (string) {
+  return objInfo.Headers.Get("nasefa-filename")
+}
+
+func setFilename(objMeta *nats.ObjectMeta, filename string) {
+  if objMeta.Headers == nil {
+    objMeta.Headers = nats.Header{}
+  }
+  objMeta.Headers.Add("nasefa-filename", filename)
+}

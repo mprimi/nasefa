@@ -4,7 +4,11 @@ import (
   "context"
   "flag"
   "fmt"
+  "os"
+  "path"
+  "github.com/nats-io/nats.go"
   "github.com/google/subcommands"
+  "github.com/google/uuid"
 )
 
 type sendCommand struct {
@@ -40,7 +44,26 @@ func (p *sendCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
   for i, filePath := range f.Args() {
     fmt.Printf("📤 Sending file %d/%d: %s\n", i+1, numFiles, filePath)
 
-    _, err := objStore.PutFile(filePath)
+    // _, err := objStore.PutFile(filePath)
+
+    f, err := os.Open(filePath)
+    if err != nil {
+      fmt.Printf("❌ Send error, failed to open '%s': %s\n", filePath, err)
+      return subcommands.ExitFailure
+    }
+    defer f.Close()
+
+    fileId := uuid.NewString()
+    filename := path.Base(filePath)
+    objMeta := nats.ObjectMeta{
+      Name: fileId,
+      Description: fmt.Sprintf("Nasefa file object (%s)", filename),
+    }
+    setFilename(&objMeta, filename)
+    objInfo, err := objStore.Put(&objMeta, f)
+
+    logDebug("Uploaded: %s/%s (%s) => %v", p.bucketName, objMeta.Name, objInfo.NUID, objInfo)
+
     if err != nil {
       fmt.Printf("❌ Send error: %s\n", err)
       return subcommands.ExitFailure
