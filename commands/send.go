@@ -13,6 +13,7 @@ import (
 
 type sendCommand struct {
   bucketName    string
+  fileId        string
 }
 
 func SendCommand() (subcommands.Command) {
@@ -21,19 +22,20 @@ func SendCommand() (subcommands.Command) {
 
 func (*sendCommand) Name() string     { return "send" }
 func (*sendCommand) Synopsis() string { return "Send a file" }
-func (*sendCommand) Usage() string { return "send [options] <file> ...\n" }
+func (*sendCommand) Usage() string { return "send [options] <file>\n" }
 func (this *sendCommand) SetFlags(f *flag.FlagSet) {
   f.StringVar(&this.bucketName, "bucket", defaultBucketName, "Name of the bucket where file is stored")
+  f.StringVar(&this.fileId, "fileId", "", "ID of the file, used for download (randomly generated if not provided)")
 }
 
-func (p *sendCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+func (p *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
-  numFiles := len(f.Args())
-
-  if numFiles < 1 {
-    fmt.Printf("⚠️ Usage error: no files provided\n")
+  if len(flagSet.Args()) != 1 {
+    fmt.Printf("⚠️ Usage error: must provide a single file path\n")
     return subcommands.ExitUsageError
   }
+
+  filePath := flagSet.Args()[0]
 
   objStore, err := getObjStore(p.bucketName)
   if err != nil {
@@ -41,33 +43,33 @@ func (p *sendCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
     return subcommands.ExitFailure
   }
 
-  for i, filePath := range f.Args() {
-    fmt.Printf("📤 Sending file %d/%d: %s\n", i+1, numFiles, filePath)
+  file, err := os.Open(filePath)
+  if err != nil {
+    fmt.Printf("❌ Send error, failed to open '%s': %s\n", filePath, err)
+    return subcommands.ExitFailure
+  }
+  defer file.Close()
 
-    // _, err := objStore.PutFile(filePath)
+  fileId := p.fileId
+  if fileId == "" {
+    fileId = uuid.NewString()
+  }
 
-    f, err := os.Open(filePath)
-    if err != nil {
-      fmt.Printf("❌ Send error, failed to open '%s': %s\n", filePath, err)
-      return subcommands.ExitFailure
-    }
-    defer f.Close()
+  fmt.Printf("📤 Sending file %s => %s\n", filePath, fileId)
 
-    fileId := uuid.NewString()
-    filename := path.Base(filePath)
-    objMeta := nats.ObjectMeta{
-      Name: fileId,
-      Description: fmt.Sprintf("Nasefa file object (%s)", filename),
-    }
-    setFilename(&objMeta, filename)
-    objInfo, err := objStore.Put(&objMeta, f)
+  filename := path.Base(filePath)
+  objMeta := nats.ObjectMeta{
+    Name: fileId,
+    Description: fmt.Sprintf("Nasefa file object (%s)", filename),
+  }
+  setFilename(&objMeta, filename)
+  objInfo, err := objStore.Put(&objMeta, file)
 
-    logDebug("Uploaded: %s/%s (%s) => %v", p.bucketName, objMeta.Name, objInfo.NUID, objInfo)
+  logDebug("Uploaded: %s/%s (%s) => %v", p.bucketName, objMeta.Name, objInfo.NUID, objInfo)
 
-    if err != nil {
-      fmt.Printf("❌ Send error: %s\n", err)
-      return subcommands.ExitFailure
-    }
+  if err != nil {
+    fmt.Printf("❌ Send error: %s\n", err)
+    return subcommands.ExitFailure
   }
 
   fmt.Printf("✅ Done\n")

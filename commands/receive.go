@@ -18,15 +18,15 @@ func ReceiveCommand() (subcommands.Command) {
 }
 
 func (*receiveCommand) Name() string     { return "receive" }
-func (*receiveCommand) Synopsis() string { return "Receive a file" }
-func (*receiveCommand) Usage() string { return "receive [options] <destination_directory> <file_id> ... \n" }
+func (*receiveCommand) Synopsis() string { return "Receive one or multiple files" }
+func (*receiveCommand) Usage() string { return "receive [options] <destination_directory> <file_id> ...\n" }
 func (p *receiveCommand) SetFlags(f *flag.FlagSet) {
   f.StringVar(&p.bucketName, "bucket", defaultBucketName, "Name of the bucket where file is stored")
 }
 
-func (p *receiveCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+func (p *receiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
-  numFiles := len(f.Args()) - 1
+  numFiles := len(flagSet.Args()) - 1
 
   if numFiles < 1 {
     fmt.Printf("⚠️ Usage error: destination directory and at least one file id required\n")
@@ -39,8 +39,8 @@ func (p *receiveCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interf
     return subcommands.ExitFailure
   }
 
-  destinationDirectory := f.Args()[0]
-  fileIds := f.Args()[1:]
+  destinationDirectory := flagSet.Args()[0]
+  fileIds := flagSet.Args()[1:]
 
   for i, fileId := range fileIds {
 
