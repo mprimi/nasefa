@@ -13,6 +13,7 @@ func main()  {
   commands.RegisterTopLevelFlags()
   subcommands.Register(commands.SendCommand(), "")
   subcommands.Register(commands.ReceiveCommand(), "")
+  subcommands.Register(commands.ListCommand(), "")
   subcommands.Register(subcommands.HelpCommand(), "help")
   subcommands.Register(subcommands.FlagsCommand(), "help")
   subcommands.Register(subcommands.CommandsCommand(), "help")
