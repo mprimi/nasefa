@@ -4,16 +4,11 @@ import (
   "context"
   "flag"
   "fmt"
-  "os"
-  "path"
-  "github.com/nats-io/nats.go"
   "github.com/google/subcommands"
-  "github.com/google/uuid"
 )
 
 type sendCommand struct {
-  bucketName    string
-  fileId        string
+  bundleName        string
 }
 
 func SendCommand() (subcommands.Command) {
@@ -21,55 +16,36 @@ func SendCommand() (subcommands.Command) {
 }
 
 func (*sendCommand) Name() string     { return "send" }
-func (*sendCommand) Synopsis() string { return "Send a file" }
-func (*sendCommand) Usage() string { return "send [options] <file>\n" }
+func (*sendCommand) Synopsis() string { return "Send a bundle of files" }
+func (*sendCommand) Usage() string { return "send [options] <file> ... \n" }
 func (this *sendCommand) SetFlags(f *flag.FlagSet) {
-  f.StringVar(&this.bucketName, "bucket", defaultBucketName, "Name of the bucket where file is stored")
-  f.StringVar(&this.fileId, "fileId", "", "ID of the file, used for download (randomly generated if not provided)")
+  f.StringVar(&this.bundleName, "bundleName", "", "Unique ID for this file bundle, used for download (randomly generated if not provided)")
 }
 
-func (p *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
-  if len(flagSet.Args()) != 1 {
-    fmt.Printf("⚠️ Usage error: must provide a single file path\n")
+  filePaths := flagSet.Args()
+  numFiles := len(filePaths)
+  if numFiles < 1 {
+    fmt.Printf("⚠️ Usage error: must provide at least one file\n")
     return subcommands.ExitUsageError
   }
 
-  filePath := flagSet.Args()[0]
-
-  objStore, err := getObjStore(p.bucketName)
+  bundle, err := newBundle(this.bundleName)
   if err != nil {
-    fmt.Printf("❌ %s\n", err)
+    fmt.Printf("❌ Failed to create bundle: %s\n", err)
     return subcommands.ExitFailure
   }
+  logInfo("Created file bundle '%s'", bundle.name)
 
-  file, err := os.Open(filePath)
-  if err != nil {
-    fmt.Printf("❌ Send error, failed to open '%s': %s\n", filePath, err)
-    return subcommands.ExitFailure
-  }
-  defer file.Close()
-
-  fileId := p.fileId
-  if fileId == "" {
-    fileId = uuid.NewString()
-  }
-
-  fmt.Printf("📤 Sending file %s => %s\n", filePath, fileId)
-
-  filename := path.Base(filePath)
-  objMeta := nats.ObjectMeta{
-    Name: fileId,
-    Description: fmt.Sprintf("Nasefa file object (%s)", filename),
-  }
-  setFilename(&objMeta, filename)
-  objInfo, err := objStore.Put(&objMeta, file)
-
-  logDebug("Uploaded: %s/%s (%s) => %v", p.bucketName, objMeta.Name, objInfo.NUID, objInfo)
-
-  if err != nil {
-    fmt.Printf("❌ Send error: %s\n", err)
-    return subcommands.ExitFailure
+  for i, filePath := range filePaths {
+    logInfo("Uploading file %d/%d: %s", i+1, numFiles, filePath)
+    bundleFile, err := addFileToBundle(bundle, filePath, "")
+    if err != nil {
+      fmt.Printf("❌ Send error '%s': %s\n", filePath, err)
+      return subcommands.ExitFailure
+    }
+    logInfo("Added file '%s' => '%s'", bundleFile.fileName, bundleFile.id)
   }
 
   fmt.Printf("✅ Done\n")

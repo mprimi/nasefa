@@ -30,39 +30,30 @@ func (p *listCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
     return subcommands.ExitUsageError
   }
 
-  objStore, err := getObjStore(p.bucketName)
+  bundles, err := loadBundles()
   if err != nil {
-    fmt.Printf("❌ %s\n", err)
+    fmt.Printf("❌ List failed: %s\n", err)
     return subcommands.ExitFailure
   }
 
-  objsInfo, err := objStore.List()
-  if err != nil {
-    fmt.Printf("❌ List error: %s\n", err)
-    return subcommands.ExitFailure
-  }
+  fmt.Printf("Found %d file bundles:\n", len(bundles))
 
-  fmt.Printf("Listing bucket: %s\n", p.bucketName)
-
-  skipped := []string{}
-  filesCount := 0
-  filesSize := datasize.ByteSize(0)
-  for _, objInfo := range objsInfo {
-    filename := getFilename(objInfo)
-    if filename == "" {
-      skipped = append(skipped, objInfo.Name)
-    } else {
-      fileId := objInfo.Name
-      fileSize := datasize.ByteSize(objInfo.Size)
-      fmt.Printf(" - %s [%s] [%s]\n", fileId, filename, fileSize.HumanReadable())
-      filesCount += 1
-      filesSize += fileSize
+  for _, bundle := range bundles {
+    bundleSize := datasize.ByteSize(bundle.objStoreStatus.Size())
+    fmt.Printf(" * %s (%d files, %s)\n",
+      bundle.name,
+      len(bundle.files),
+      bundleSize.HumanReadable(),
+    )
+    for _, file := range bundle.files {
+      fileSize := datasize.ByteSize(file.objInfo.Size)
+      fmt.Printf("   - %s (%s) [%s]\n",
+        file.fileName,
+        fileSize.HumanReadable(),
+        file.id,
+      )
+      bundleSize += fileSize
     }
-  }
-  fmt.Printf("Total: %d files (%s)\n", filesCount, filesSize.HumanReadable())
-
-  if len(skipped) > 0 {
-    fmt.Printf("⚠️ Ignored %d objects that are not Nasefa files (%v)\n", len(skipped), skipped)
   }
 
   fmt.Printf("✅ Done\n")

@@ -6,7 +6,7 @@ import (
   "github.com/nats-io/nats.go"
 )
 
-func getObjStore(bucket string) (nats.ObjectStore, error)  {
+func getJSContext() (nats.JetStreamContext, error)  {
   nc, err := nats.Connect(options.natsURL)
   if err != nil {
     return nil, errors.New(fmt.Sprintf("Connection error: %s", err))
@@ -17,23 +17,36 @@ func getObjStore(bucket string) (nats.ObjectStore, error)  {
     return nil, errors.New(fmt.Sprintf("JetStream init error: %s", err))
   }
 
-  objStore, err := js.ObjectStore(bucket)
+  return js, nil
+}
+
+func createBucket(bucket string) (nats.ObjectStore, error)  {
+  nc, err := nats.Connect(options.natsURL)
+  if err != nil {
+    return nil, errors.New(fmt.Sprintf("Connection error: %s", err))
+  }
+
+  js, err := nc.JetStream()
+  if err != nil {
+    return nil, errors.New(fmt.Sprintf("JetStream init error: %s", err))
+  }
+
+  err = js.DeleteObjectStore(bucket)
   if err == nats.ErrStreamNotFound {
-    // TODO: for now, create the bucket, should be an option later
-
-    objStoreConfig := nats.ObjectStoreConfig{
-      Bucket: bucket,
-      Description: "Default bucket for nasefa file uploads",
-      //TODO: TTL, MaxBytes, Storage, Replicas
-    }
-    objStore, err = js.CreateObjectStore(&objStoreConfig)
-    if err != nil {
-      return nil, errors.New(fmt.Sprintf("Bucket creation error: %s", err))
-
-    }
-
+    // Bucket does not exist, as expected
   } else if err != nil {
-    return nil, errors.New(fmt.Sprintf("Bucket lookup error: %s", err))
+    return nil, errors.New(fmt.Sprintf("Bucket wipe error: %s", err))
+  }
+
+  objStoreConfig := nats.ObjectStoreConfig{
+    Bucket: bucket,
+    Description: "nasefa file bundle: " + bucket,
+    //TODO: TTL, MaxBytes, Storage, Replicas
+  }
+  
+  objStore, err := js.CreateObjectStore(&objStoreConfig)
+  if err != nil {
+    return nil, errors.New(fmt.Sprintf("Bucket creation error: %s", err))
   }
 
   return objStore, nil
@@ -43,13 +56,10 @@ func logDebug(format string, a ...interface{}) (int, error)  {
   return fmt.Printf(" 🐛 " + format + "\n", a...)
 }
 
-func getFilename(objInfo *nats.ObjectInfo) (string) {
-  return objInfo.Headers.Get("nasefa-filename")
+func logInfo(format string, a ...interface{}) (int, error)  {
+  return fmt.Printf(" ℹ️  " + format + "\n", a...)
 }
 
-func setFilename(objMeta *nats.ObjectMeta, filename string) {
-  if objMeta.Headers == nil {
-    objMeta.Headers = nats.Header{}
-  }
-  objMeta.Headers.Add("nasefa-filename", filename)
+func logWarn(format string, a ...interface{}) (int, error)  {
+  return fmt.Printf(" ⚠️ " + format + "\n", a...)
 }

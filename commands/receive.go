@@ -6,7 +6,6 @@ import (
   "fmt"
   "path"
   "github.com/google/subcommands"
-  "github.com/nats-io/nats.go"
 )
 
 type receiveCommand struct {
@@ -18,58 +17,49 @@ func ReceiveCommand() (subcommands.Command) {
 }
 
 func (*receiveCommand) Name() string     { return "receive" }
-func (*receiveCommand) Synopsis() string { return "Receive one or multiple files" }
-func (*receiveCommand) Usage() string { return "receive [options] <destination_directory> <file_id> ...\n" }
+func (*receiveCommand) Synopsis() string { return "Receive one or more file bundles" }
+func (*receiveCommand) Usage() string { return "receive [options] <destination_directory> <bundle> ...\n" }
 func (p *receiveCommand) SetFlags(f *flag.FlagSet) {
   f.StringVar(&p.bucketName, "bucket", defaultBucketName, "Name of the bucket where file is stored")
 }
 
 func (p *receiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
-  numFiles := len(flagSet.Args()) - 1
+  numBundles := len(flagSet.Args()) - 1
 
-  if numFiles < 1 {
-    fmt.Printf("⚠️ Usage error: destination directory and at least one file id required\n")
+  if numBundles < 1 {
+    fmt.Printf("⚠️ Usage error: destination directory and at least one bundle id required\n")
     return subcommands.ExitUsageError
   }
 
-  objStore, err := getObjStore(p.bucketName)
+  js, err := getJSContext()
   if err != nil {
-    fmt.Printf("❌ %s\n", err)
+    fmt.Printf("❌ Error connecting: %s\n", err)
     return subcommands.ExitFailure
   }
 
   destinationDirectory := flagSet.Args()[0]
-  fileIds := flagSet.Args()[1:]
+  bundleNames := flagSet.Args()[1:]
 
-  for i, fileId := range fileIds {
-
-    objInfo, err := objStore.GetInfo(fileId)
-    if err == nats.ErrObjectNotFound {
-      fmt.Printf("❌ No such object '%s'\n", fileId)
-      return subcommands.ExitFailure
-    } else if err != nil {
-      fmt.Printf("❌ Receive lookup error '%s': %s\n", fileId, err)
-      return subcommands.ExitFailure
-    }
-
-    filename := getFilename(objInfo)
-    if filename == "" {
-      fmt.Printf("❌ Receive error, '%s' is not a file\n", fileId)
-      return subcommands.ExitFailure
-    }
-
-    destinationFile := path.Join(destinationDirectory, filename)
-
-    fmt.Printf("📥 Receiving file %d/%d: %s/%s => %s\n", i+1, numFiles, p.bucketName, fileId, destinationFile)
-
-    err = objStore.GetFile(fileId, destinationFile)
+  numFilesReceived := 0
+  for _, bundleName := range bundleNames {
+    bundle, err := _loadBundle(js, bundleName)
     if err != nil {
-      fmt.Printf("❌ Receive failed: %s\n", err)
+      fmt.Printf("❌ Error receiving bundle '%s': %s\n", bundleName, err)
       return subcommands.ExitFailure
+    }
+
+    for _, file := range bundle.files {
+      destinationPath := path.Join(destinationDirectory, file.fileName)
+      err := downloadBundleFile(file, destinationPath)
+      if err != nil {
+        fmt.Printf("❌ Error downloading file '%s': %s\n", file.fileName, err)
+        return subcommands.ExitFailure
+      }
+      numFilesReceived += 1
     }
   }
 
-  fmt.Printf("✅ Done\n")
+  fmt.Printf("✅ Received %d files in %d bundles\n", numFilesReceived, numBundles)
   return subcommands.ExitSuccess
 }
