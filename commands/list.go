@@ -40,14 +40,21 @@ func (p *listCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 
   for _, bundle := range bundles {
     bundleSize := datasize.ByteSize(bundle.objStoreStatus.Size())
-    fmt.Printf(" * %s (%d files, %s)\n",
+    bundleExpiration := bundle.objStoreStatus.TTL()
+    bundleCreation := bundle.objStoreStatus.TTL()
+    expiration := "never"
+    if bundleExpiration.Nanoseconds() > 0 {
+      expiration = bundleExpiration.String()
+    }
+    fmt.Printf(" * %s (%d files, %s, expires: %s)\n",
       bundle.name,
       len(bundle.files),
       bundleSize.HumanReadable(),
+      expiration,
     )
     for _, file := range bundle.files {
       fileSize := datasize.ByteSize(file.objInfo.Size)
-      fmt.Printf("   - %s (%s) [%s]\n",
+      fmt.Printf("   - %s (%s)\t[%s]\n",
         file.fileName,
         fileSize.HumanReadable(),
         file.id,

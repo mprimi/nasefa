@@ -3,6 +3,7 @@ package commands
 import (
   "errors"
   "fmt"
+  "time"
   "github.com/nats-io/nats.go"
 )
 
@@ -20,7 +21,7 @@ func getJSContext() (nats.JetStreamContext, error)  {
   return js, nil
 }
 
-func createBucket(bucket string) (nats.ObjectStore, error)  {
+func createBucket(bucket string, ttl time.Duration) (nats.ObjectStore, error)  {
   nc, err := nats.Connect(options.natsURL)
   if err != nil {
     return nil, errors.New(fmt.Sprintf("Connection error: %s", err))
@@ -41,9 +42,10 @@ func createBucket(bucket string) (nats.ObjectStore, error)  {
   objStoreConfig := nats.ObjectStoreConfig{
     Bucket: bucket,
     Description: "nasefa file bundle: " + bucket,
-    //TODO: TTL, MaxBytes, Storage, Replicas
+    TTL: ttl,
+    //TODO: MaxBytes, Storage, Replicas
   }
-  
+
   objStore, err := js.CreateObjectStore(&objStoreConfig)
   if err != nil {
     return nil, errors.New(fmt.Sprintf("Bucket creation error: %s", err))

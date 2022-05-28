@@ -6,6 +6,7 @@ import (
   "path"
   "os"
   "strings"
+  "time"
   "github.com/nats-io/nats.go"
   "github.com/google/uuid"
 )
@@ -28,12 +29,12 @@ const (
   kFilenameHeader = "nasefa-filename"
 )
 
-func newBundle(bundleName string) (*fileBundle, error) {
+func newBundle(bundleName string, ttl time.Duration) (*fileBundle, error) {
   if bundleName == "" {
     bundleName = uuid.NewString()
   }
 
-  objStore, err := createBucket(bundleName)
+  objStore, err := createBucket(bundleName, ttl)
   if err != nil {
     return nil, err
   }

@@ -4,11 +4,13 @@ import (
   "context"
   "flag"
   "fmt"
+  "time"
   "github.com/google/subcommands"
 )
 
 type sendCommand struct {
   bundleName        string
+  ttl               time.Duration
 }
 
 func SendCommand() (subcommands.Command) {
@@ -20,6 +22,7 @@ func (*sendCommand) Synopsis() string { return "Send a bundle of files" }
 func (*sendCommand) Usage() string { return "send [options] <file> ... \n" }
 func (this *sendCommand) SetFlags(f *flag.FlagSet) {
   f.StringVar(&this.bundleName, "bundleName", "", "Unique ID for this file bundle, used for download (randomly generated if not provided)")
+  f.DurationVar(&this.ttl, "expire", 0, "Automatically delete this file bundle after a certain amount of time")
 }
 
 func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
@@ -31,7 +34,7 @@ func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
     return subcommands.ExitUsageError
   }
 
-  bundle, err := newBundle(this.bundleName)
+  bundle, err := newBundle(this.bundleName, this.ttl)
   if err != nil {
     fmt.Printf("❌ Failed to create bundle: %s\n", err)
     return subcommands.ExitFailure
