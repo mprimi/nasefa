@@ -4,6 +4,7 @@ import (
   "context"
   "flag"
   "fmt"
+  "strings"
   "time"
   "github.com/google/subcommands"
 )
@@ -11,10 +12,20 @@ import (
 type sendCommand struct {
   bundleName        string
   ttl               time.Duration
+  recipients        recipientTags
 }
 
 func SendCommand() (subcommands.Command) {
   return &sendCommand{}
+}
+
+type recipientTags []string
+func (this *recipientTags) Set(tag string) error {
+  *this = append(*this, tag)
+  return nil
+}
+func (this *recipientTags) String() string {
+  return strings.Join([]string(*this), ",")
 }
 
 func (*sendCommand) Name() string     { return "send" }
@@ -23,6 +34,7 @@ func (*sendCommand) Usage() string { return "send [options] <file> ... \n" }
 func (this *sendCommand) SetFlags(f *flag.FlagSet) {
   f.StringVar(&this.bundleName, "bundleName", "", "Unique ID for this file bundle, used for download (randomly generated if not provided)")
   f.DurationVar(&this.ttl, "expire", 0, "Automatically delete this file bundle after a certain amount of time")
+  f.Var(&this.recipients, "to", "Tag name for recipients in auto-download (can be repeated)") //TODO: Crappy description, review later
 }
 
 func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
@@ -49,6 +61,14 @@ func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
       return subcommands.ExitFailure
     }
     logInfo("Added file '%s' => '%s'", bundleFile.fileName, bundleFile.id)
+  }
+
+  if len(this.recipients) > 0 {
+    err := notifyRecipients(bundle, this.recipients...)
+    if err != nil {
+      fmt.Printf("❌ Failed to notify bundle recipients: %s\n", err)
+      return subcommands.ExitFailure
+    }
   }
 
   fmt.Printf("✅ Done\n")
