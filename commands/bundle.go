@@ -3,8 +3,8 @@ package commands
 import (
   "errors"
   "fmt"
-  "path"
   "os"
+  "path"
   "strings"
   "time"
   "github.com/nats-io/nats.go"
@@ -30,12 +30,7 @@ const (
 )
 
 func createBucket(bucket string, ttl time.Duration) (nats.ObjectStore, error)  {
-  nc, err := nats.Connect(options.natsURL)
-  if err != nil {
-    return nil, errors.New(fmt.Sprintf("Connection error: %s", err))
-  }
-
-  js, err := nc.JetStream()
+  js, err := getJSContext()
   if err != nil {
     return nil, errors.New(fmt.Sprintf("JetStream init error: %s", err))
   }
@@ -205,6 +200,28 @@ func _loadFile(bundle *fileBundle, objInfo *nats.ObjectInfo) (*bundleFile, error
   }
 
   return bundleFile, nil
+}
+
+func downloadBundle(destinationDirectory, bundleName string) (*fileBundle, error) {
+  js, err := getJSContext()
+  if err != nil {
+    return nil, err // TODO wrap error (here and everywhere)
+  }
+
+  bundle, err := _loadBundle(js, bundleName)
+  if err != nil {
+    return nil, err
+  }
+
+  for _, file := range bundle.files {
+    destinationPath := path.Join(destinationDirectory, file.fileName)
+    err := downloadBundleFile(file, destinationPath)
+    if err != nil {
+      return nil, err
+    }
+  }
+
+  return bundle, nil
 }
 
 func downloadBundleFile(file *bundleFile, filePath string) (error)  {

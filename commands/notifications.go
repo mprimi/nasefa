@@ -111,5 +111,6 @@ func watchBundles(recipientTags ...string) (<-chan string, error) {
   }
 
   doCleanup = false
+  trackSubscriptions(subs...)
   return bundlesCh, nil
 }

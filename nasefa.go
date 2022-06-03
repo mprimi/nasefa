@@ -10,6 +10,7 @@ import (
 
 
 func main()  {
+  defer commands.ClientCleanup()
   commands.RegisterTopLevelFlags()
   subcommands.Register(commands.SendCommand(), "")
   subcommands.Register(commands.ReceiveCommand(), "")
