@@ -29,6 +29,39 @@ const (
   kFilenameHeader = "nasefa-filename"
 )
 
+func createBucket(bucket string, ttl time.Duration) (nats.ObjectStore, error)  {
+  nc, err := nats.Connect(options.natsURL)
+  if err != nil {
+    return nil, errors.New(fmt.Sprintf("Connection error: %s", err))
+  }
+
+  js, err := nc.JetStream()
+  if err != nil {
+    return nil, errors.New(fmt.Sprintf("JetStream init error: %s", err))
+  }
+
+  err = js.DeleteObjectStore(bucket)
+  if err == nats.ErrStreamNotFound {
+    // Bucket does not exist, as expected
+  } else if err != nil {
+    return nil, errors.New(fmt.Sprintf("Bucket wipe error: %s", err))
+  }
+
+  objStoreConfig := nats.ObjectStoreConfig{
+    Bucket: bucket,
+    Description: "nasefa file bundle: " + bucket,
+    TTL: ttl,
+    //TODO: MaxBytes, Storage, Replicas
+  }
+
+  objStore, err := js.CreateObjectStore(&objStoreConfig)
+  if err != nil {
+    return nil, errors.New(fmt.Sprintf("Bucket creation error: %s", err))
+  }
+
+  return objStore, nil
+}
+
 func newBundle(bundleName string, ttl time.Duration) (*fileBundle, error) {
   if bundleName == "" {
     bundleName = uuid.NewString()

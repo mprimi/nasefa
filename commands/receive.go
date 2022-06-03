@@ -4,7 +4,6 @@ import (
   "context"
   "flag"
   "fmt"
-  "path"
   "github.com/google/subcommands"
 )
 
@@ -32,34 +31,19 @@ func (p *receiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
     return subcommands.ExitUsageError
   }
 
-  js, err := getJSContext()
-  if err != nil {
-    fmt.Printf("❌ Error connecting: %s\n", err)
-    return subcommands.ExitFailure
-  }
-
   destinationDirectory := flagSet.Args()[0]
   bundleNames := flagSet.Args()[1:]
 
-  numFilesReceived := 0
+  totalFiles := 0
   for _, bundleName := range bundleNames {
-    bundle, err := _loadBundle(js, bundleName)
+    bundle, err := downloadBundle(destinationDirectory, bundleName)
     if err != nil {
       fmt.Printf("❌ Error receiving bundle '%s': %s\n", bundleName, err)
       return subcommands.ExitFailure
     }
-
-    for _, file := range bundle.files {
-      destinationPath := path.Join(destinationDirectory, file.fileName)
-      err := downloadBundleFile(file, destinationPath)
-      if err != nil {
-        fmt.Printf("❌ Error downloading file '%s': %s\n", file.fileName, err)
-        return subcommands.ExitFailure
-      }
-      numFilesReceived += 1
-    }
+    totalFiles += len(bundle.files)
   }
 
-  fmt.Printf("✅ Received %d files in %d bundles\n", numFilesReceived, numBundles)
+  fmt.Printf("✅ Received %d files in %d bundles\n", totalFiles, numBundles)
   return subcommands.ExitSuccess
 }

@@ -41,7 +41,6 @@ func (p *listCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
   for _, bundle := range bundles {
     bundleSize := datasize.ByteSize(bundle.objStoreStatus.Size())
     bundleExpiration := bundle.objStoreStatus.TTL()
-    bundleCreation := bundle.objStoreStatus.TTL()
     expiration := "never"
     if bundleExpiration.Nanoseconds() > 0 {
       expiration = bundleExpiration.String()

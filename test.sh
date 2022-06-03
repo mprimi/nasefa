@@ -22,8 +22,8 @@ head -c ${FILES_SIZE} /dev/random > "${FILE2}"
 head -c ${FILES_SIZE} /dev/random > "${FILE3}"
 
 ${NASEFA} send -bundleName documents ${FILE1} ${FILE2}
-${NASEFA} send -bundleName archive ${FILE3}
-${NASEFA} send -bundleName archive-autodelete -expire "1m" ${FILE3}
+${NASEFA} send -bundleName archive -to foo -to bar ${FILE3}
+${NASEFA} send -bundleName archive-autodelete -expire "1s" ${FILE3}
 
 mv "${FILE1}" "${FILE1}.original"
 mv "${FILE2}" "${FILE2}.original"
