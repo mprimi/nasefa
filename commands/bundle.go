@@ -140,7 +140,9 @@ func loadBundles() ([]*fileBundle, error) {
   for _, bucketName := range bucketNames {
     bundle, err := _loadBundle(js, bucketName)
     if err != nil {
+      // TODO expired empty bundles show up here
       logWarn("Skipping bucket '%s': %s", bucketName, err)
+      continue
     }
 
     bundles = append(bundles, bundle)

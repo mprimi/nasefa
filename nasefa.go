@@ -16,6 +16,7 @@ func main()  {
   subcommands.Register(commands.ReceiveCommand(), "")
   subcommands.Register(commands.AutoreceiveCommand(), "")
   subcommands.Register(commands.ListCommand(), "")
+  subcommands.Register(commands.WebCommand(), "")
   subcommands.Register(subcommands.HelpCommand(), "help")
   subcommands.Register(subcommands.FlagsCommand(), "help")
   subcommands.Register(subcommands.CommandsCommand(), "help")

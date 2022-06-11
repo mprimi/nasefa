@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Nasefa</title>
+  </head>
+  <body>
+    <h1>Bundles</h1>
+
+    {{range .Bundles}}
+      <h2>📦 <a href="#">{{.Name}}</a></h2>
+      {{.NumFiles}} files, {{.Size}}
+    {{end}}
+
+  </body>
+</html>
