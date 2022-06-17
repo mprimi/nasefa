@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Nasefa</title>
+  </head>
+  <body>
+    <h1>Upload</h1>
+    <h2>📦 {{.Name}}</h2>
+    <form action="{{.Action}}" method="{{.Method}}" enctype="multipart/form-data">
+      <!-- <label for="_file">File</label>
+      <input type="file" id="_file" name="file"> -->
+
+      Choose file, then hit upload:
+      {{range .FileInputs}}
+        <div>
+        <label for="_file-{{.}}">➕ </label>
+        <input type="file" id="_file-{{.}}" name="{{.}}">
+        </div>
+      {{end}}
+
+      <input type="submit" value="Upload">
+    </form>
+  </body>
+</html>

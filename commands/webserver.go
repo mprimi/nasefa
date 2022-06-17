@@ -13,15 +13,21 @@ import _ "embed"
 
 //go:embed web/list_bundles.html
 var listBundlesHtml string
-
 //go:embed web/list_bundle.html
 var listBundleHtml string
-
+//go:embed web/upload_form.html
+var uploadFormHtml string
+//go:embed web/upload_completed.html
+var uploadCompletedHtml string
 
 var templates struct {
-  listBundles *template.Template
-  listBundle  *template.Template
+  listBundles         *template.Template
+  listBundle          *template.Template
+  uploadForm          *template.Template
+  uploadCompleted     *template.Template
 }
+
+var kUploadFormFileInputs = []string{"file1", "file2", "file3"} // TODO numFileInputs int
 
 func handleListBundles(w http.ResponseWriter, req *http.Request) {
 
@@ -128,6 +134,94 @@ func handleBundleFileDownload(w http.ResponseWriter, req *http.Request, bundleNa
   io.Copy(w, reader)
 }
 
+func handleUploadForm(w http.ResponseWriter, req *http.Request, bundleName string) {
+
+  bundle, err := loadBundle(bundleName)
+  if err == kErrBundleNotFound {
+    http.NotFound(w, req)
+    return
+  } else if err != nil {
+    logWarn("Error loading bundle: %s", err)
+    http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
+    return
+  }
+
+  type _bundleUpload struct {
+    Name            string
+    Action          string
+    Method          string
+    FileInputs      []string
+  }
+
+  bu := _bundleUpload{
+    Name: bundle.name,
+    Action: fmt.Sprintf("/upload/%s", bundle.name),
+    Method: "POST",
+    FileInputs: kUploadFormFileInputs,
+  }
+
+  err = templates.uploadForm.Execute(w, bu)
+  if err != nil {
+    http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
+    return
+  }
+}
+
+func handleFilesUpload(w http.ResponseWriter, req *http.Request, bundleName string) {
+
+  bundle, err := loadBundle(bundleName)
+  if err == kErrBundleNotFound {
+    http.NotFound(w, req)
+    return
+  } else if err != nil {
+    logWarn("Error loading bundle: %s", err)
+    http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
+    return
+  }
+
+  uploadedFileNames := []string{}
+  totalSize := uint64(0)
+
+  for _, fileInput := range kUploadFormFileInputs {
+    fileContent, fileHeaders, err := req.FormFile(fileInput)
+    if err == http.ErrMissingFile {
+      // File field unused
+      continue
+    } else if err != nil {
+      http.Error(w, fmt.Sprintf("Invalid request: %s", err), http.StatusBadRequest)
+      return
+    }
+
+    fileName := fileHeaders.Filename
+
+    bf, err := addFileToBundle(bundle, fileContent, fileName, "")
+    if err != nil {
+      http.Error(w, fmt.Sprintf("Error uploading file: %s", err), http.StatusInternalServerError)
+      return
+    }
+    uploadedFileNames = append(uploadedFileNames, fileName)
+    totalSize += bf.objInfo.Size
+  }
+
+  type _uploadInfo struct {
+    Name      string
+    NumFiles  int
+    TotalSize string
+  }
+
+  ui := _uploadInfo{
+    Name: bundleName,
+    NumFiles: len(uploadedFileNames),
+    TotalSize: datasize.ByteSize(totalSize).HumanReadable(),
+  }
+
+  err = templates.uploadCompleted.Execute(w, ui)
+  if err != nil {
+    http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
+    return
+  }
+}
+
 func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request)) {
 
   kBundleNameRe := "[a-zA-Z0-9_\\.\\-]{4,128}"
@@ -171,11 +265,13 @@ func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request))
 
     } else if (uploadFileRe.MatchString(requestPath)) && (isGet(req)) {
       bundleName := uploadFileRe.FindStringSubmatch(requestPath)[1]
-      logInfo("Upload form for bundle: %s", bundleName)
+      logDebug("Upload form for bundle: %s", bundleName)
+      handleUploadForm(w, req, bundleName)
 
     } else if (uploadFileRe.MatchString(requestPath)) && (isPost(req)) {
       bundleName := uploadFileRe.FindStringSubmatch(requestPath)[1]
-      logInfo("Upload file to bundle: %s", bundleName)
+      logDebug("Upload file(s) to bundle: %s", bundleName)
+      handleFilesUpload(w, req, bundleName)
 
     } else {
       logWarn("Unhandled request: %s", requestPath)
@@ -195,8 +291,10 @@ func WebAppStart(bindAddr, prefix string)  {
     prefix = prefix + "/"
   }
 
-  templates.listBundles = template.Must(template.New("list_bundles").Parse(listBundlesHtml))
-  templates.listBundle  = template.Must(template.New("list_bundle").Parse(listBundleHtml))
+  templates.listBundles      = template.Must(template.New("list_bundles").Parse(listBundlesHtml))
+  templates.listBundle       = template.Must(template.New("list_bundle").Parse(listBundleHtml))
+  templates.uploadForm       = template.Must(template.New("upload_form").Parse(uploadFormHtml))
+  templates.uploadCompleted  = template.Must(template.New("upload_completed").Parse(uploadCompletedHtml))
 
   http.HandleFunc(prefix, makeHandler(prefix))
 

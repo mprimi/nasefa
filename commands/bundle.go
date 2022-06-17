@@ -4,7 +4,6 @@ import (
   "errors"
   "fmt"
   "io"
-  "os"
   "path"
   "strings"
   "time"
@@ -86,18 +85,10 @@ func newBundle(bundleName string, ttl time.Duration) (*fileBundle, error) {
   }, nil
 }
 
-func addFileToBundle(bundle *fileBundle, filePath, fileId string) (*bundleFile, error) {
+func addFileToBundle(bundle *fileBundle, reader io.Reader, fileName, fileId string) (*bundleFile, error) {
   if fileId == "" {
     fileId = uuid.NewString()
   }
-
-  file, err := os.Open(filePath)
-  if err != nil {
-    return nil, err
-  }
-  defer file.Close()
-
-  fileName := path.Base(filePath)
 
   objMeta := nats.ObjectMeta{
     Name: fileId,
@@ -106,7 +97,7 @@ func addFileToBundle(bundle *fileBundle, filePath, fileId string) (*bundleFile, 
   }
   objMeta.Headers.Add(kFilenameHeader, fileName)
 
-  objInfo, err := bundle.objStore.Put(&objMeta, file)
+  objInfo, err := bundle.objStore.Put(&objMeta, reader)
   if err != nil {
     return nil, err
   }
