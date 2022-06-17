@@ -3,6 +3,7 @@ package commands
 import (
   "errors"
   "fmt"
+  "io"
   "os"
   "path"
   "strings"
@@ -27,6 +28,11 @@ type bundleFile struct {
 
 const (
   kFilenameHeader = "nasefa-filename"
+)
+
+var (
+  kErrBundleNotFound = errors.New("Bundle not found")
+  kErrBundleFileNotFound = errors.New("Bundle file not found")
 )
 
 func createBucket(bucket string, ttl time.Duration) (nats.ObjectStore, error)  {
@@ -151,9 +157,51 @@ func loadBundles() ([]*fileBundle, error) {
   return bundles, nil
 }
 
+func loadBundle(bundleName string) (*fileBundle, error) {
+
+  js, err := getJSContext()
+  if err != nil {
+    return nil, err
+  }
+
+  bundle, err := _loadBundle(js, bundleName)
+  if err != nil {
+    return nil, err
+  }
+
+  return bundle, nil
+}
+
+func loadBundleFile(bundleName, fileName string) (*bundleFile, error) {
+
+  js, err := getJSContext()
+  if err != nil {
+    return nil, err
+  }
+
+  bundle, err := _loadBundle(js, bundleName)
+  if err != nil {
+    return nil, err
+  }
+
+  for _, file := range bundle.files {
+    if file.fileName == fileName {
+      return file, nil
+    }
+  }
+
+  return nil, kErrBundleFileNotFound
+}
+
+func getBundleFileReader(file *bundleFile) (io.Reader, error) {
+  return file.bundle.objStore.Get(file.id)
+}
+
 func _loadBundle(js nats.JetStreamContext, bundleName string) (*fileBundle, error) {
   objStore, err := js.ObjectStore(bundleName)
-  if err != nil {
+  if err == nats.ErrBucketNotFound || err == nats.ErrStreamNotFound {
+    return nil, kErrBundleNotFound
+  } else if err != nil {
     return nil, err
   }
 

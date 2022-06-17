@@ -5,11 +5,10 @@
     <title>Nasefa</title>
   </head>
   <body>
-    <h1>Bundles</h1>
+    <h1>📦 Bundle: {{.Name}}</h1>
 
-    {{range .Bundles}}
-      <h2>📦 <a href="{{.Href}}">{{.Name}}</a></h2>
-      {{.NumFiles}} files, {{.Size}}
+    {{range .Files}}
+      <h3>📎 <a href="{{.Href}}">{{.Name}}</a> ({{.Size}})</h2>
     {{end}}
 
   </body>
