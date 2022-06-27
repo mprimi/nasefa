@@ -194,13 +194,13 @@ func handleFilesUpload(w http.ResponseWriter, req *http.Request, bundleName stri
 
     fileName := fileHeaders.Filename
 
-    bf, err := addFileToBundle(bundle, fileContent, fileName, "")
+    bundleFile, err := _addFileToBundle(bundle, fileContent, fileName)
     if err != nil {
       http.Error(w, fmt.Sprintf("Error uploading file: %s", err), http.StatusInternalServerError)
       return
     }
     uploadedFileNames = append(uploadedFileNames, fileName)
-    totalSize += bf.objInfo.Size
+    totalSize += bundleFile.objInfo.Size
   }
 
   type _uploadInfo struct {

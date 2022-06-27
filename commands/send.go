@@ -4,8 +4,6 @@ import (
   "context"
   "flag"
   "fmt"
-  "os"
-  "path"
   "strings"
   "time"
   "github.com/google/subcommands"
@@ -57,23 +55,11 @@ func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
 
   for i, filePath := range filePaths {
     logInfo("Uploading file %d/%d: %s", i+1, numFiles, filePath)
-
-    file, err := os.Open(filePath)
+    _, err := addFileToBundle(bundle, filePath)
     if err != nil {
-      fmt.Printf("❌ Failed to open %s: %s\n", filePath, err)
+      fmt.Printf("❌ Add file error '%s': %s\n", filePath, err)
       return subcommands.ExitFailure
     }
-    defer file.Close()
-
-    fileName := path.Base(filePath)
-
-    bundleFile, err := addFileToBundle(bundle, file, fileName, "")
-    file.Close()
-    if err != nil {
-      fmt.Printf("❌ Send error '%s': %s\n", filePath, err)
-      return subcommands.ExitFailure
-    }
-    logInfo("Added file '%s' => '%s'", bundleFile.fileName, bundleFile.id)
   }
 
   if len(this.recipients) > 0 {

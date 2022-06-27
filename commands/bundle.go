@@ -4,6 +4,7 @@ import (
   "errors"
   "fmt"
   "io"
+  "os"
   "path"
   "strings"
   "time"
@@ -27,6 +28,7 @@ type bundleFile struct {
 
 const (
   kFilenameHeader = "nasefa-filename"
+  kBundleDescription = "NASEFA files bundle"
 )
 
 var (
@@ -41,6 +43,7 @@ func createBucket(bucket string, ttl time.Duration) (nats.ObjectStore, error)  {
   }
 
   err = js.DeleteObjectStore(bucket)
+  // TODO revisit later, maybe delete and recreate is not always the proper thing to do
   if err == nats.ErrStreamNotFound {
     // Bucket does not exist, as expected
   } else if err != nil {
@@ -49,7 +52,7 @@ func createBucket(bucket string, ttl time.Duration) (nats.ObjectStore, error)  {
 
   objStoreConfig := nats.ObjectStoreConfig{
     Bucket: bucket,
-    Description: "nasefa file bundle: " + bucket,
+    Description: kBundleDescription,
     TTL: ttl,
     //TODO: MaxBytes, Storage, Replicas
   }
@@ -62,8 +65,26 @@ func createBucket(bucket string, ttl time.Duration) (nats.ObjectStore, error)  {
   return objStore, nil
 }
 
+func deleteBucket(bucket string) (error)  {
+  js, err := getJSContext()
+  if err != nil {
+    return errors.New(fmt.Sprintf("JetStream init error: %s", err))
+  }
+
+  err = js.DeleteObjectStore(bucket)
+  if err == nats.ErrStreamNotFound {
+    // Bucket does not exist
+    return nil
+  } else if err != nil {
+    return errors.New(fmt.Sprintf("Bucket delete error: %s", err))
+  }
+
+  return nil
+}
+
 func newBundle(bundleName string, ttl time.Duration) (*fileBundle, error) {
   if bundleName == "" {
+    //TODO use bucket name validation regex
     bundleName = uuid.NewString()
   }
 
@@ -85,13 +106,32 @@ func newBundle(bundleName string, ttl time.Duration) (*fileBundle, error) {
   }, nil
 }
 
-func addFileToBundle(bundle *fileBundle, reader io.Reader, fileName, fileId string) (*bundleFile, error) {
-  if fileId == "" {
-    fileId = uuid.NewString()
+func deleteBundle(bundleName string) (error) {
+  if bundleName == "" {
+    //TODO use bucket name validation regex
+    return errors.New("Invalid bucket name: " + bundleName)
   }
+  err := deleteBucket(bundleName)
+  return err
+}
+
+func addFileToBundle(bundle *fileBundle, filePath string) (*bundleFile, error) {
+
+  fileName := path.Base(filePath)
+
+  file, err := os.Open(filePath)
+  if err != nil {
+    return nil, err
+  }
+  defer file.Close()
+
+  return _addFileToBundle(bundle, file, fileName)
+}
+
+func _addFileToBundle(bundle *fileBundle, reader io.Reader, fileName string) (*bundleFile, error) {
 
   objMeta := nats.ObjectMeta{
-    Name: fileId,
+    Name: fileName,
     Description: fmt.Sprintf("Nasefa file %s", fileName),
     Headers: nats.Header{},
   }
@@ -106,7 +146,7 @@ func addFileToBundle(bundle *fileBundle, reader io.Reader, fileName, fileId stri
     bundle: bundle,
     objInfo: objInfo,
     fileName: fileName,
-    id: fileId,
+    id: fileName,
   }
 
   bundle.files = append(bundle.files, bundleFile)
@@ -127,7 +167,7 @@ func loadBundles() ([]*fileBundle, error) {
   bucketNames := []string{}
   for streamName := range js.StreamNames() {
     if strings.HasPrefix(streamName, "OBJ_") {
-      bucketName := strings.ReplaceAll(streamName, "OBJ_", "")
+      bucketName := strings.Replace(streamName, "OBJ_", "", 1)
       logDebug("Found bucket %s", bucketName)
       bucketNames = append(bucketNames, bucketName)
     }
@@ -199,6 +239,12 @@ func _loadBundle(js nats.JetStreamContext, bundleName string) (*fileBundle, erro
   objStoreStatus, err := objStore.Status()
   if err != nil {
     return nil, err
+  }
+
+  if objStoreStatus.Description() != kBundleDescription {
+    // If description doesn't match, this may be a bucket created by some other
+    // application, leave it alone.
+    return nil, kErrBundleNotFound
   }
 
   objsInfo, err := objStore.List()

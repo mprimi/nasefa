@@ -1,0 +1,36 @@
+package commands
+
+import (
+  "context"
+  "flag"
+  "fmt"
+  "github.com/google/subcommands"
+)
+
+type deleteBundleCommand struct {
+  bundleName        string
+}
+
+func DeleteBundleCommand() (subcommands.Command) {
+  return &deleteBundleCommand{}
+}
+
+func (*deleteBundleCommand) Name() string     { return "delete" }
+func (*deleteBundleCommand) Synopsis() string { return "Deletes a files bundle" }
+func (*deleteBundleCommand) Usage() string { return "delete [options] \n" }
+func (this *deleteBundleCommand) SetFlags(f *flag.FlagSet) {
+  f.StringVar(&this.bundleName, "bundleName", "", "Name of the bundle to delete")
+}
+
+func (this *deleteBundleCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+
+  err := deleteBundle(this.bundleName)
+  if err != nil {
+    fmt.Printf("❌ Failed to delete bundle: %s\n", err)
+    return subcommands.ExitFailure
+  }
+  logInfo("Deleted file bundle '%s'", this.bundleName)
+
+  fmt.Printf("✅ Done\n")
+  return subcommands.ExitSuccess
+}
