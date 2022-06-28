@@ -1,17 +1,18 @@
 # Nasefa
 
-Nasefa is a utility to send and receive files on a local network, or over the internet.
+Nasefa is a utility to send and receive files between computers. And to share files with friends over the internet.
 
-![ThePlague]
+| ![ThePlague] |
+|:--:|
+| <b>It is not that easy, Mr. ThePlague!</b><br><small>[© MGM/UA]</small>|
 
 It's 2022, computers can do incredible things, and yet it is still non-trivial to send/receive a file to your friends (without also sharing it with `$MEGACORP`).
 
-Nasefa is primarily a fun & learning project (Golang, NATS).
-But it turned into an utility that solves some real use-cases.
+Nasefa is primarily a fun & learning project I created to explore and learn [NATS](https://nats.io/) and Golang's `http` and `html/template` libraries. It turned into an utility I use daily.
 
 Here's how I use Nasefa:
 
-## Use case 1: Send myself files (between computers on LAN)
+## Use case 1: Send myself files (between computers)
 
 Between me and family, we have computers running Linux, macOS, iOS, Android, Windows, and more.
 
@@ -31,7 +32,7 @@ This is convenient (for me), because the receiving computer does not have to be 
 
 If I forget the bundle name (`tax_documents` in the example), I can look it up with `nasefa list`
 
-## Use case 2: Deploy simple file changes
+## Use case 2: Deploy simple file changes to groups of hosts
 
 Between work and hobby projects, I often find myself using `scp` to copy files around. It is kind of a pain sometimes.
 
@@ -150,6 +151,22 @@ If you are feeling adventurous, you can even run NATS server in a WASM-capable b
 
 ---
 
+# Features that weren't
+
+There's a number of things I'd love to add to Nasefa. Alas, time is scarce and I don't know if I'll ever get around to it.
+
+But if someone out there ends up using this tool, and asks for them, I'd be motivated to implement them.
+
+ * No disk mode - NATS stores files in memory, files are never written on disk (and lost if server is restarted)
+ * Synchronous stream mode - sender streams to receiver, if the latter is listening, bypassing JetStream entirely
+ * Customizable CSS for web interface
+ * Tests! I have not gotten around to look at Go's test facilities and frameworks. Some tests exist, but they are pretty crappy end-to-end/integration/smoke tests written in `bash`)
+ * Encryption - Encrypting files should be done before sending, e.g. using [PGP](https://en.wikipedia.org/wiki/Pretty_Good_Privacy) or [age](https://github.com/FiloSottile/age) but could be nice to build it in.
+ * Flags to control behavior when overriding files (both upload and download)
+ * Better code organization (this is my first non-trivial project with Go, I'm sure I'm committing some idiomatic sins)
+
+---
+
 # F.A.Q.
 
 ### Why didn't you use ___ instead?
@@ -183,5 +200,4 @@ I'd love to hear anything you have to say about Nasefa. Hit me up!
 (Contact information is in my GitHub profile).
 
 
-
-[ThePlague]: /theplague.png "It's not that easy, Mr ThePlague!"
+[ThePlague]: /theplague.png "It is not that easy, Mr. ThePlague!"
