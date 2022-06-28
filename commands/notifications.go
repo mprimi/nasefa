@@ -22,7 +22,7 @@ func initNotificationStream(js nats.JetStreamContext) (error) {
     return err
   }
 
-  logDebug("Created notification stream: %v", streamInfo)
+  log.debug("Created notification stream: %v", streamInfo)
   return nil
 }
 
@@ -51,7 +51,7 @@ func notifyRecipients(bundle *fileBundle, recipients ...string) (error) {
       return err
     }
 
-    logDebug("Published notification for recipient %s: %v", recipient, pubAck)
+    log.debug("Published notification for recipient %s: %v", recipient, pubAck)
   }
 
   return nil
@@ -82,10 +82,10 @@ func watchBundles(recipientTags ...string) (<-chan string, error) {
   handleBundleNotification := func (msg *nats.Msg) {
     bundleName := msg.Header.Get(kBundleNameHeader)
     if bundleName == "" {
-      logWarn("Invalid notification lacks bundle name")
+      log.warn("Invalid notification lacks bundle name")
       return
     }
-    logDebug("Bundle notification: %s (subject: %s)", bundleName, msg.Subject)
+    log.debug("Bundle notification: %s (subject: %s)", bundleName, msg.Subject)
     bundlesCh <- bundleName
   }
 
@@ -101,7 +101,7 @@ func watchBundles(recipientTags ...string) (<-chan string, error) {
       return nil, err
     }
     subs = append(subs, sub)
-    logDebug("Subscribed to bundle notifications subject: %s", subject)
+    log.debug("Subscribed to bundle notifications subject: %s", subject)
   }
 
   doCleanup = false

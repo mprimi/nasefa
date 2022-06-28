@@ -3,7 +3,6 @@ package commands
 import (
   "context"
   "flag"
-  "fmt"
   "strings"
   "time"
   "github.com/google/subcommands"
@@ -42,22 +41,22 @@ func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
   filePaths := flagSet.Args()
   numFiles := len(filePaths)
   if numFiles < 1 {
-    fmt.Printf("⚠️ Usage error: must provide at least one file\n")
+    log.err("Usage error: must provide at least one file\n")
     return subcommands.ExitUsageError
   }
 
   bundle, err := newBundle(this.bundleName, this.ttl)
   if err != nil {
-    fmt.Printf("❌ Failed to create bundle: %s\n", err)
+    log.err("Failed to create bundle: %s\n", err)
     return subcommands.ExitFailure
   }
-  logInfo("Created file bundle '%s'", bundle.name)
+  log.info("Created file bundle '%s'", bundle.name)
 
   for i, filePath := range filePaths {
-    logInfo("Uploading file %d/%d: %s", i+1, numFiles, filePath)
+    log.info("Uploading file %d/%d: %s", i+1, numFiles, filePath)
     _, err := addFileToBundle(bundle, filePath)
     if err != nil {
-      fmt.Printf("❌ Add file error '%s': %s\n", filePath, err)
+      log.err("Add file error '%s': %s\n", filePath, err)
       return subcommands.ExitFailure
     }
   }
@@ -65,11 +64,11 @@ func (this *sendCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
   if len(this.recipients) > 0 {
     err := notifyRecipients(bundle, this.recipients...)
     if err != nil {
-      fmt.Printf("❌ Failed to notify bundle recipients: %s\n", err)
+      log.err("Failed to notify bundle recipients: %s\n", err)
       return subcommands.ExitFailure
     }
   }
 
-  fmt.Printf("✅ Done\n")
+  log.success("Done\n")
   return subcommands.ExitSuccess
 }

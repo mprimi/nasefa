@@ -3,7 +3,6 @@ package commands
 import (
   "context"
   "flag"
-  "fmt"
   "time"
   "github.com/google/subcommands"
 )
@@ -29,17 +28,17 @@ func (this *createBundleCommand) SetFlags(f *flag.FlagSet) {
 func (this *createBundleCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
   if this.bundleName == "" {
-    fmt.Printf("⚠️ Usage error: missing bundle name\n")
+    log.err("Usage error: missing bundle name\n")
     return subcommands.ExitUsageError
   }
 
   bundle, err := newBundle(this.bundleName, this.ttl)
   if err != nil {
-    fmt.Printf("❌ Failed to create bundle: %s\n", err)
+    log.err("Failed to create bundle: %s\n", err)
     return subcommands.ExitFailure
   }
-  logInfo("Created empty file bundle '%s'", bundle.name)
+  log.info("Created empty file bundle '%s'", bundle.name)
 
-  fmt.Printf("✅ Done\n")
+  log.success("Done\n")
   return subcommands.ExitSuccess
 }

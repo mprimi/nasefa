@@ -3,7 +3,6 @@ package commands
 import (
   "context"
   "flag"
-  "fmt"
   "github.com/google/subcommands"
 )
 
@@ -32,12 +31,12 @@ func (this *webCommand) SetFlags(f *flag.FlagSet) {
 func (this *webCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
   if len(f.Args()) > 0 {
-    fmt.Printf("⚠️ Usage error: unknown arguments: %v\n", f.Args())
+    log.err("Usage error: unknown arguments: %v\n", f.Args())
     return subcommands.ExitUsageError
   }
 
   WebAppStart(this.bindAddr, this.prefixPath)
 
-  fmt.Printf("✅ Done\n")
+  log.success("Done\n")
   return subcommands.ExitSuccess
 }

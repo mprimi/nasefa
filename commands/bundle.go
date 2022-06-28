@@ -168,7 +168,7 @@ func loadBundles() ([]*fileBundle, error) {
   for streamName := range js.StreamNames() {
     if strings.HasPrefix(streamName, "OBJ_") {
       bucketName := strings.Replace(streamName, "OBJ_", "", 1)
-      logDebug("Found bucket %s", bucketName)
+      log.debug("Found bucket %s", bucketName)
       bucketNames = append(bucketNames, bucketName)
     }
   }
@@ -178,7 +178,7 @@ func loadBundles() ([]*fileBundle, error) {
     bundle, err := _loadBundle(js, bucketName)
     if err != nil {
       // TODO expired empty bundles show up here
-      logWarn("Skipping bucket '%s': %s", bucketName, err)
+      log.warn("Skipping bucket '%s': %s", bucketName, err)
       continue
     }
 
@@ -233,13 +233,13 @@ func _loadBundle(js nats.JetStreamContext, bundleName string) (*fileBundle, erro
   if err == nats.ErrBucketNotFound || err == nats.ErrStreamNotFound {
     return nil, kErrBundleNotFound
   } else if err != nil {
-    logDebug("Error loading object store: %s", err)
+    log.debug("Error loading object store: %s", err)
     return nil, err
   }
 
   objStoreStatus, err := objStore.Status()
   if err != nil {
-    logDebug("Error loading object store status: %s", err)
+    log.debug("Error loading object store status: %s", err)
     return nil, err
   }
 
@@ -255,7 +255,7 @@ func _loadBundle(js nats.JetStreamContext, bundleName string) (*fileBundle, erro
     objsInfo = []*nats.ObjectInfo{}
     err = nil
   } else if err != nil {
-    logDebug("Error loading object store objects list: %s", err)
+    log.debug("Error loading object store objects list: %s", err)
     return nil, err
   }
 
@@ -269,7 +269,7 @@ func _loadBundle(js nats.JetStreamContext, bundleName string) (*fileBundle, erro
   for _, objInfo := range objsInfo {
     file, err := _loadFile(bundle, objInfo)
     if err != nil {
-      logWarn("Skipping file '%s/%s': %s", bundleName, objInfo.Name,  err)
+      log.warn("Skipping file '%s/%s': %s", bundleName, objInfo.Name,  err)
       continue
     }
 

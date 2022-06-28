@@ -3,7 +3,6 @@ package commands
 import (
   "context"
   "flag"
-  "fmt"
   "strings"
   "github.com/google/subcommands"
 )
@@ -26,7 +25,7 @@ func (p *autoreceiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _
   numRecipient := len(flagSet.Args()) - 1
 
   if numRecipient < 1 {
-    fmt.Printf("⚠️ Usage error: destination directory and at least one recipient tag required\n")
+    log.err("Usage error: destination directory and at least one recipient tag required\n")
     return subcommands.ExitUsageError
   }
 
@@ -35,19 +34,19 @@ func (p *autoreceiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _
 
   bundleNotificationsCh, err := watchBundles(recipientTagNames...)
   if err != nil {
-    fmt.Printf("❌ Error subscribing to bundle notifications: %s\n", err)
+    log.err("Error subscribing to bundle notifications: %s\n", err)
     return subcommands.ExitFailure
   }
 
-  fmt.Printf("✅ Watching for file bundles tagged: %s\n", strings.Join(recipientTagNames, "|"))
+  log.success("Watching for file bundles tagged: %s\n", strings.Join(recipientTagNames, "|"))
 
   for bundleName := range bundleNotificationsCh {
     bundle, err := downloadBundle(destinationDirectory, bundleName)
     if err != nil {
-      fmt.Printf("❌ Error receiving bundle '%s': %s\n", bundleName, err)
+      log.err("Error receiving bundle '%s': %s\n", bundleName, err)
       return subcommands.ExitFailure
     }
-    fmt.Printf("✅ Received bundle '%s' (%d files)\n", bundleName, len(bundle.files))
+    log.success("Received bundle '%s' (%d files)\n", bundleName, len(bundle.files))
   }
 
   return subcommands.ExitSuccess

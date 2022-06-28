@@ -16,7 +16,7 @@ var singleton struct {
 func getJSContext() (nats.JetStreamContext, error)  {
 
   if singleton.nc == nil {
-    logDebug("Connecting to %s", options.natsURL)
+    log.debug("Connecting to %s", options.natsURL)
     nc, err := nats.Connect(options.natsURL)
     if err != nil {
       return nil, err

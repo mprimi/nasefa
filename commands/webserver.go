@@ -33,7 +33,7 @@ func handleListBundles(w http.ResponseWriter, req *http.Request) {
 
   bundles, err := loadBundles()
   if err != nil {
-    logWarn("Error loading bundles: %s", err)
+    log.warn("Error loading bundles: %s", err)
     http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
   }
 
@@ -76,7 +76,7 @@ func handleListBundle(w http.ResponseWriter, req *http.Request, bundleName strin
     http.NotFound(w, req)
     return
   } else if err != nil {
-    logWarn("Error loading bundle: %s", err)
+    log.warn("Error loading bundle: %s", err)
     http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
     return
   }
@@ -116,14 +116,14 @@ func handleListBundle(w http.ResponseWriter, req *http.Request, bundleName strin
 func handleBundleFileDownload(w http.ResponseWriter, req *http.Request, bundleName, fileName string) {
   bFile, err := loadBundleFile(bundleName, fileName)
   if err == kErrBundleNotFound || err == kErrBundleFileNotFound {
-    logWarn("Error loading bundle file: %s", err)
+    log.warn("Error loading bundle file: %s", err)
     http.NotFound(w, req)
     return
   }
 
   reader, err := getBundleFileReader(bFile)
   if err != nil {
-    logWarn("Error getting bundle file reader: %s", err)
+    log.warn("Error getting bundle file reader: %s", err)
     http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
     return
   }
@@ -141,7 +141,7 @@ func handleUploadForm(w http.ResponseWriter, req *http.Request, bundleName strin
     http.NotFound(w, req)
     return
   } else if err != nil {
-    logWarn("Error loading bundle: %s", err)
+    log.warn("Error loading bundle: %s", err)
     http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
     return
   }
@@ -174,7 +174,7 @@ func handleFilesUpload(w http.ResponseWriter, req *http.Request, bundleName stri
     http.NotFound(w, req)
     return
   } else if err != nil {
-    logWarn("Error loading bundle: %s", err)
+    log.warn("Error loading bundle: %s", err)
     http.Error(w, fmt.Sprintf("Internal error: %s", err), http.StatusInternalServerError)
     return
   }
@@ -246,35 +246,35 @@ func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request))
   return func(w http.ResponseWriter, req *http.Request) {
 
     requestPath := req.URL.Path
-    logDebug("Requested: %s", requestPath)
+    log.debug("Requested: %s", requestPath)
 
     if pathMatch(rootRe, req) && isGet(req) {
-      logDebug("List bundles")
+      log.debug("List bundles")
       handleListBundles(w, req)
 
     } else if (listBundleRe.MatchString(requestPath)) && (isGet(req)) {
       bundleName := listBundleRe.FindStringSubmatch(requestPath)[1]
-      logDebug("List bundle: %s", bundleName)
+      log.debug("List bundle: %s", bundleName)
       handleListBundle(w, req, bundleName)
 
     } else if (downloadFileRe.MatchString(requestPath)) && (isGet(req)) {
       matches := downloadFileRe.FindStringSubmatch(requestPath)
       bundleName, fileName := matches[1], matches[2]
-      logDebug("Download %s/%s", bundleName, fileName)
+      log.debug("Download %s/%s", bundleName, fileName)
       handleBundleFileDownload(w, req, bundleName, fileName)
 
     } else if (uploadFileRe.MatchString(requestPath)) && (isGet(req)) {
       bundleName := uploadFileRe.FindStringSubmatch(requestPath)[1]
-      logDebug("Upload form for bundle: %s", bundleName)
+      log.debug("Upload form for bundle: %s", bundleName)
       handleUploadForm(w, req, bundleName)
 
     } else if (uploadFileRe.MatchString(requestPath)) && (isPost(req)) {
       bundleName := uploadFileRe.FindStringSubmatch(requestPath)[1]
-      logDebug("Upload file(s) to bundle: %s", bundleName)
+      log.debug("Upload file(s) to bundle: %s", bundleName)
       handleFilesUpload(w, req, bundleName)
 
     } else {
-      logWarn("Unhandled request: %s %s", req.Method, requestPath)
+      log.warn("Unhandled request: %s %s", req.Method, requestPath)
       http.Error(w, "Invalid request", http.StatusBadRequest)
     }
   }
@@ -297,7 +297,7 @@ func WebAppStart(bindAddr, prefix string)  {
   templates.uploadCompleted  = template.Must(template.New("upload_completed").Parse(uploadCompletedHtml))
 
   http.HandleFunc(prefix, makeHandler(prefix))
+  log.info("Starting server @ %s\n", bindAddr)
 
-  fmt.Printf("Starting server @ %s\n", bindAddr)
   http.ListenAndServe(bindAddr, nil)
 }

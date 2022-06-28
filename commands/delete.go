@@ -3,7 +3,6 @@ package commands
 import (
   "context"
   "flag"
-  "fmt"
   "github.com/google/subcommands"
 )
 
@@ -25,17 +24,17 @@ func (this *deleteBundleCommand) SetFlags(f *flag.FlagSet) {
 func (this *deleteBundleCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
   if this.bundleName == "" {
-    fmt.Printf("⚠️ Usage error: missing bundle name\n")
+    log.err("Usage error: missing bundle name\n")
     return subcommands.ExitUsageError
   }
-  
+
   err := deleteBundle(this.bundleName)
   if err != nil {
-    fmt.Printf("❌ Failed to delete bundle: %s\n", err)
+    log.err("Failed to delete bundle: %s\n", err)
     return subcommands.ExitFailure
   }
-  logInfo("Deleted file bundle '%s'", this.bundleName)
+  log.info("Deleted file bundle '%s'", this.bundleName)
 
-  fmt.Printf("✅ Done\n")
+  log.success("Done\n")
   return subcommands.ExitSuccess
 }

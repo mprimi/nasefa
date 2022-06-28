@@ -49,6 +49,7 @@ func main()  {
   }
 
   flag.Parse()
+  commands.InitLogger()
   ctx := context.Background()
   os.Exit(int(subcommands.Execute(ctx)))
 }

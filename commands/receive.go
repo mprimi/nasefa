@@ -3,7 +3,6 @@ package commands
 import (
   "context"
   "flag"
-  "fmt"
   "github.com/google/subcommands"
 )
 
@@ -25,7 +24,7 @@ func (p *receiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
   numBundles := len(flagSet.Args()) - 1
 
   if numBundles < 1 {
-    fmt.Printf("⚠️ Usage error: destination directory and at least one bundle id required\n")
+    log.err("Usage error: destination directory and at least one bundle id required\n")
     return subcommands.ExitUsageError
   }
 
@@ -36,12 +35,12 @@ func (p *receiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...
   for _, bundleName := range bundleNames {
     bundle, err := downloadBundle(destinationDirectory, bundleName)
     if err != nil {
-      fmt.Printf("❌ Error receiving bundle '%s': %s\n", bundleName, err)
+      log.err("Error receiving bundle '%s': %s\n", bundleName, err)
       return subcommands.ExitFailure
     }
     totalFiles += len(bundle.files)
   }
 
-  fmt.Printf("✅ Received %d files in %d bundles\n", totalFiles, numBundles)
+  log.success("Received %d files in %d bundles\n", totalFiles, numBundles)
   return subcommands.ExitSuccess
 }

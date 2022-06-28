@@ -24,13 +24,13 @@ func (this *listCommand) SetFlags(f *flag.FlagSet) {
 func (p *listCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
   if len(f.Args()) > 0 {
-    fmt.Printf("⚠️ Usage error: unknown arguments: %v\n", f.Args())
+    log.err("Usage error: unknown arguments: %v\n", f.Args())
     return subcommands.ExitUsageError
   }
 
   bundles, err := loadBundles()
   if err != nil {
-    fmt.Printf("❌ List failed: %s\n", err)
+    log.err("List failed: %s\n", err)
     return subcommands.ExitFailure
   }
 
@@ -60,6 +60,6 @@ func (p *listCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
     }
   }
 
-  fmt.Printf("✅ Done\n")
+  log.success("Done\n")
   return subcommands.ExitSuccess
 }
