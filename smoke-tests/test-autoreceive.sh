@@ -8,7 +8,7 @@ source ${SCRIPT_DIR}/util.sh
 # --
 
 RECEIVER_TAG=foobar
-${NASEFA_BIN} auto-receive ${TEMPDIR} ${RECEIVER_TAG} some-tag some-other-tag &
+${NASEFA} auto-receive ${TEMPDIR} ${RECEIVER_TAG} some-tag some-other-tag &
 RECEIVE_PID=${!}
 log_debug "Started auto-receiver, PID: ${RECEIVE_PID}"
 
@@ -17,7 +17,7 @@ F1=theplague.png
 F2=README.md
 F3=LICENSE
 
-${NASEFA_BIN} send -bundleName ${BUNDLE_NAME} -to ${RECEIVER_TAG} -to blah ${NASEFA_ROOT}/${F1} ${NASEFA_ROOT}/${F2} ${NASEFA_ROOT}/${F3}
+${NASEFA} send -bundleName ${BUNDLE_NAME} -to ${RECEIVER_TAG} -to blah ${NASEFA_ROOT}/${F1} ${NASEFA_ROOT}/${F2} ${NASEFA_ROOT}/${F3}
 log_debug "Files sent: ${F1} ${F2} ${F3}"
 
 # Give the receiver some time

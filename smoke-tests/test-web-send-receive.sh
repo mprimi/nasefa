@@ -13,11 +13,11 @@ F2=README.md
 
 PORT=8081
 
-${NASEFA_BIN} web -bindAddr ":${PORT}" &
+${NASEFA} web -bindAddr ":${PORT}" &
 WEB_PID=${!}
 log_debug "Started web, PID: ${WEB_PID}"
 
-${NASEFA_BIN} create -bundleName ${BUNDLE_NAME}
+${NASEFA} create -bundleName ${BUNDLE_NAME}
 log_debug "Bundle created: ${BUNDLE_NAME}"
 
 curl -s http://localhost:${PORT}/bundle/${BUNDLE_NAME} >/dev/null || fail "Failed to list bundle ${BUNDLE_NAME}"

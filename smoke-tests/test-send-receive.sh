@@ -12,9 +12,9 @@ F1=theplague.png
 F2=README.md
 F3=LICENSE
 
-${NASEFA_BIN} send -bundleName ${BUNDLE_NAME} ${NASEFA_ROOT}/${F1} ${NASEFA_ROOT}/${F2} ${NASEFA_ROOT}/${F3}
+${NASEFA} send -bundleName ${BUNDLE_NAME} ${NASEFA_ROOT}/${F1} ${NASEFA_ROOT}/${F2} ${NASEFA_ROOT}/${F3}
 log_debug "Files sent: ${F1} ${F2} ${F3}"
 
-${NASEFA_BIN} receive ${TEMPDIR} ${BUNDLE_NAME}
+${NASEFA} receive ${TEMPDIR} ${BUNDLE_NAME}
 
 check_files ${NASEFA_ROOT} ${TEMPDIR} ${F1} ${F2} ${F3}

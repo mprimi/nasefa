@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 NASEFA_ROOT="${SCRIPT_DIR}/.."
 NASEFA_BIN="${NASEFA_ROOT}/nasefa"
+# NASEFA_OPTS="-debug -noEmoji"
+NASEFA="${NASEFA_BIN} ${NASEFA_OPTS}"
 
 function fail() {
   echo "❌ $*"

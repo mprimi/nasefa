@@ -12,11 +12,11 @@ F1=theplague.png
 F2=README.md
 F3=LICENSE
 
-${NASEFA_BIN} create -bundleName ${BUNDLE_NAME}
+${NASEFA} create -bundleName ${BUNDLE_NAME}
 log_debug "Bundle created ${BUNDLE_NAME}"
 
-${NASEFA_BIN} add -bundleName ${BUNDLE_NAME} ${NASEFA_ROOT}/${F1} ${NASEFA_ROOT}/${F2}
+${NASEFA} add -bundleName ${BUNDLE_NAME} ${NASEFA_ROOT}/${F1} ${NASEFA_ROOT}/${F2}
 log_debug "Files added: ${F1} ${F2}"
 
-${NASEFA_BIN} list
+${NASEFA} list
 # TODO check listing
