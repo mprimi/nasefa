@@ -28,6 +28,11 @@ func (this *createBundleCommand) SetFlags(f *flag.FlagSet) {
 
 func (this *createBundleCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
+  if this.bundleName == "" {
+    fmt.Printf("⚠️ Usage error: missing bundle name\n")
+    return subcommands.ExitUsageError
+  }
+
   bundle, err := newBundle(this.bundleName, this.ttl)
   if err != nil {
     fmt.Printf("❌ Failed to create bundle: %s\n", err)

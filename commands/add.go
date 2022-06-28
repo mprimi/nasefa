@@ -27,6 +27,11 @@ func (this *addFileCommand) SetFlags(f *flag.FlagSet) {
 
 func (this *addFileCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
+  if this.bundleName == "" {
+    fmt.Printf("⚠️ Usage error: missing bundle name\n")
+    return subcommands.ExitUsageError
+  }
+  
   filePaths := flagSet.Args()
   numFiles := len(filePaths)
   if numFiles < 1 {

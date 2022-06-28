@@ -233,11 +233,13 @@ func _loadBundle(js nats.JetStreamContext, bundleName string) (*fileBundle, erro
   if err == nats.ErrBucketNotFound || err == nats.ErrStreamNotFound {
     return nil, kErrBundleNotFound
   } else if err != nil {
+    logDebug("Error loading object store: %s", err)
     return nil, err
   }
 
   objStoreStatus, err := objStore.Status()
   if err != nil {
+    logDebug("Error loading object store status: %s", err)
     return nil, err
   }
 
@@ -248,7 +250,12 @@ func _loadBundle(js nats.JetStreamContext, bundleName string) (*fileBundle, erro
   }
 
   objsInfo, err := objStore.List()
-  if err != nil {
+  if err == nats.ErrNoObjectsFound {
+    // List produces error if no objects..
+    objsInfo = []*nats.ObjectInfo{}
+    err = nil
+  } else if err != nil {
+    logDebug("Error loading object store objects list: %s", err)
     return nil, err
   }
 

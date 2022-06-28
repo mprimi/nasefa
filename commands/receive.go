@@ -8,7 +8,6 @@ import (
 )
 
 type receiveCommand struct {
-  bucketName    string
 }
 
 func ReceiveCommand() (subcommands.Command) {
@@ -19,7 +18,6 @@ func (*receiveCommand) Name() string     { return "receive" }
 func (*receiveCommand) Synopsis() string { return "Receive one or more file bundles" }
 func (*receiveCommand) Usage() string { return "receive [options] <destination_directory> <bundle> ...\n" }
 func (p *receiveCommand) SetFlags(f *flag.FlagSet) {
-  f.StringVar(&p.bucketName, "bucket", defaultBucketName, "Name of the bucket where file is stored")
 }
 
 func (p *receiveCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {

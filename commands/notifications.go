@@ -11,12 +11,7 @@ const (
   kBundleNameHeader = "nasefa_bundle_name"
 )
 
-func initNotificationStream() (error) {
-  js, err := getJSContext()
-  if err != nil {
-    return err
-  }
-
+func initNotificationStream(js nats.JetStreamContext) (error) {
   streamConfig := &nats.StreamConfig{
     Name: kNotificationStreamName,
     Subjects: []string{kNotificationSubjectPrefix + ".*"},
@@ -32,13 +27,12 @@ func initNotificationStream() (error) {
 }
 
 func notifyRecipients(bundle *fileBundle, recipients ...string) (error) {
-  //TODO creates 2 clients, unnecessarily
-  initNotificationStream()
 
   js, err := getJSContext()
   if err != nil {
     return err
   }
+  initNotificationStream(js)
 
   headers := nats.Header{}
   headers.Add(kBundleNameHeader, bundle.name)
@@ -64,12 +58,11 @@ func notifyRecipients(bundle *fileBundle, recipients ...string) (error) {
 }
 
 func watchBundles(recipientTags ...string) (<-chan string, error) {
-  initNotificationStream()
-
   js, err := getJSContext()
   if err != nil {
     return nil, err
   }
+  initNotificationStream(js)
 
   bundlesCh := make(chan string)
   subs := []*nats.Subscription{}
@@ -92,7 +85,7 @@ func watchBundles(recipientTags ...string) (<-chan string, error) {
       logWarn("Invalid notification lacks bundle name")
       return
     }
-    logDebug("Bundle notification: %s", bundleName)
+    logDebug("Bundle notification: %s (subject: %s)", bundleName, msg.Subject)
     bundlesCh <- bundleName
   }
 
@@ -108,6 +101,7 @@ func watchBundles(recipientTags ...string) (<-chan string, error) {
       return nil, err
     }
     subs = append(subs, sub)
+    logDebug("Subscribed to bundle notifications subject: %s", subject)
   }
 
   doCleanup = false

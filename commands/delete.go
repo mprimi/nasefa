@@ -24,6 +24,11 @@ func (this *deleteBundleCommand) SetFlags(f *flag.FlagSet) {
 
 func (this *deleteBundleCommand) Execute(_ context.Context, flagSet *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 
+  if this.bundleName == "" {
+    fmt.Printf("⚠️ Usage error: missing bundle name\n")
+    return subcommands.ExitUsageError
+  }
+  
   err := deleteBundle(this.bundleName)
   if err != nil {
     fmt.Printf("❌ Failed to delete bundle: %s\n", err)

@@ -57,7 +57,7 @@ func handleListBundles(w http.ResponseWriter, req *http.Request) {
       Name: bundle.name,
       NumFiles: len(bundle.files),
       Size: datasize.ByteSize(bundle.objStoreStatus.Size()).HumanReadable(),
-      Href: fmt.Sprintf("./%s", bundle.name),
+      Href: fmt.Sprintf("./bundle/%s", bundle.name),
     }
     bl.Bundles = append(bl.Bundles, b)
   }
@@ -274,7 +274,7 @@ func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request))
       handleFilesUpload(w, req, bundleName)
 
     } else {
-      logWarn("Unhandled request: %s", requestPath)
+      logWarn("Unhandled request: %s %s", req.Method, requestPath)
       http.Error(w, "Invalid request", http.StatusBadRequest)
     }
   }

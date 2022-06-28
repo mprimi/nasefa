@@ -9,7 +9,6 @@ import (
 )
 
 type listCommand struct {
-  bucketName    string
 }
 
 func ListCommand() (subcommands.Command) {
@@ -20,7 +19,6 @@ func (*listCommand) Name() string     { return "list" }
 func (*listCommand) Synopsis() string { return "List available files" }
 func (*listCommand) Usage() string { return "list [options] <file> ...\n" }
 func (this *listCommand) SetFlags(f *flag.FlagSet) {
-  f.StringVar(&this.bucketName, "bucket", defaultBucketName, "Name of the bucket to list")
 }
 
 func (p *listCommand) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
