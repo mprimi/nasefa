@@ -14,10 +14,27 @@ var singleton struct {
 }
 
 func getJSContext() (nats.JetStreamContext, error)  {
-
   if singleton.nc == nil {
     log.debug("Connecting to %s", options.natsURL)
-    nc, err := nats.Connect(options.natsURL)
+
+    natsOpts := []nats.Option{
+      nats.Name("Nasefa"),
+      nats.DisconnectHandler(func(nc *nats.Conn) {
+        log.debug("Client disconnected")
+      }),
+      nats.ReconnectHandler(func(nc *nats.Conn) {
+        log.debug("Client reconnected")
+      }),
+      nats.ClosedHandler(func(nc *nats.Conn) {
+        log.debug("Client closed")
+      }),
+    }
+
+    if options.credentials != "" {
+      natsOpts = append(natsOpts, nats.UserCredentials(options.credentials))
+    }
+
+    nc, err := nats.Connect(options.natsURL, natsOpts...)
     if err != nil {
       return nil, err
     }
