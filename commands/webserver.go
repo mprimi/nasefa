@@ -225,7 +225,7 @@ func handleFilesUpload(w http.ResponseWriter, req *http.Request, bundleName stri
 func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request)) {
 
   kBundleNameRe := "[a-zA-Z0-9_\\.\\-]{4,128}"
-  kFileNameRe := "[a-zA-Z0-9_\\.\\-]{4,128}"
+  kFileNameRe := "[a-zA-Z0-9_\\.\\-\\ ]{4,128}"
 
   rootRe := regexp.MustCompile("^" + prefix + "$")
   listBundleRe := regexp.MustCompile("^" + prefix + "bundle/(" + kBundleNameRe + ")/?$")
