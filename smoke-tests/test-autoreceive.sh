@@ -11,6 +11,7 @@ RECEIVER_TAG=foobar
 ${NASEFA} auto-receive ${TEMPDIR} ${RECEIVER_TAG} some-tag some-other-tag &
 RECEIVE_PID=${!}
 log_debug "Started auto-receiver, PID: ${RECEIVE_PID}"
+trap "kill -9 ${RECEIVE_PID} || echo" EXIT
 
 BUNDLE_NAME="send-autoreceive-test-$((RANDOM))"
 F1=theplague.png

@@ -13,9 +13,10 @@ F2=README.md
 
 PORT=8081
 
-${NASEFA} web -bindAddr ":${PORT}" &
+${NASEFA} web -allowBundlesListing -bindAddr ":${PORT}" &
 WEB_PID=${!}
 log_debug "Started web, PID: ${WEB_PID}"
+trap "kill -9 ${WEB_PID} || echo" EXIT
 
 ${NASEFA} create -bundleName ${BUNDLE_NAME}
 log_debug "Bundle created: ${BUNDLE_NAME}"
