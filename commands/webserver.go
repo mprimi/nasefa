@@ -69,6 +69,10 @@ func handleListBundles(w http.ResponseWriter, req *http.Request) {
   }
 }
 
+func denyListBundles(w http.ResponseWriter, req *http.Request) {
+  http.Error(w, "Bundles listing is disabled", http.StatusForbidden)
+}
+
 func handleListBundle(w http.ResponseWriter, req *http.Request, bundleName string) {
 
   bundle, err := loadBundle(bundleName)
@@ -222,7 +226,7 @@ func handleFilesUpload(w http.ResponseWriter, req *http.Request, bundleName stri
   }
 }
 
-func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request)) {
+func makeHandler(prefix string, allowBundlesList bool) (func(w http.ResponseWriter, req *http.Request)) {
 
   kBundleNameRe := "[a-zA-Z0-9_\\.\\-]{4,128}"
   kFileNameRe := "[a-zA-Z0-9_\\.\\-\\ ]{4,128}"
@@ -250,7 +254,11 @@ func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request))
 
     if pathMatch(rootRe, req) && isGet(req) {
       log.debug("List bundles")
-      handleListBundles(w, req)
+      if allowBundlesList {
+        handleListBundles(w, req)
+      } else {
+        denyListBundles(w, req)
+      }
 
     } else if (listBundleRe.MatchString(requestPath)) && (isGet(req)) {
       bundleName := listBundleRe.FindStringSubmatch(requestPath)[1]
@@ -280,7 +288,7 @@ func makeHandler(prefix string) (func(w http.ResponseWriter, req *http.Request))
   }
 }
 
-func WebAppStart(bindAddr, prefix string)  {
+func WebAppStart(bindAddr, certFile, keyFile, prefix string, allowList bool)  {
 
   // Absolute and non-empty
   if prefix == "" || prefix[0] != '/' {
@@ -296,8 +304,14 @@ func WebAppStart(bindAddr, prefix string)  {
   templates.uploadForm       = template.Must(template.New("upload_form").Parse(uploadFormHtml))
   templates.uploadCompleted  = template.Must(template.New("upload_completed").Parse(uploadCompletedHtml))
 
-  http.HandleFunc(prefix, makeHandler(prefix))
-  log.info("Starting server @ %s\n", bindAddr)
+  http.HandleFunc(prefix, makeHandler(prefix, allowList))
+  log.info("Starting server @ %s", bindAddr)
 
-  http.ListenAndServe(bindAddr, nil)
+  if certFile != "" && keyFile != "" {
+    http.ListenAndServeTLS(bindAddr, certFile, keyFile, nil)
+  } else if certFile == "" && keyFile == "" {
+    http.ListenAndServe(bindAddr, nil)
+  } else {
+    log.err("Must specify both certificate and key")
+  }
 }
